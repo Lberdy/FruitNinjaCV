@@ -18,11 +18,11 @@ class LevelConfig:
 
 # Niveaux définis par seuil de score
 _LEVELS = [
-    LevelConfig(1, spawn_interval=120, wave_size=1, bomb_ratio=0.10, label="Ninja Débutant"),
-    LevelConfig(2, spawn_interval=100, wave_size=2, bomb_ratio=0.12, label="Ninja Apprenti"),
-    LevelConfig(3, spawn_interval=80,  wave_size=2, bomb_ratio=0.15, label="Ninja Confirmé"),
-    LevelConfig(4, spawn_interval=60,  wave_size=3, bomb_ratio=0.18, label="Ninja Maître"),
-    LevelConfig(5, spawn_interval=45,  wave_size=4, bomb_ratio=0.22, label="Grand Ninja"),
+    LevelConfig(1, spawn_interval=75, wave_size=2, bomb_ratio=0.05, label="Ninja Débutant"),
+    LevelConfig(2, spawn_interval=65, wave_size=2, bomb_ratio=0.08, label="Ninja Apprenti"),
+    LevelConfig(3, spawn_interval=55, wave_size=3, bomb_ratio=0.10, label="Ninja Confirmé"),
+    LevelConfig(4, spawn_interval=45, wave_size=3, bomb_ratio=0.14, label="Ninja Maître"),
+    LevelConfig(5, spawn_interval=35, wave_size=4, bomb_ratio=0.18, label="Grand Ninja"),
 ]
 _SCORE_THRESHOLDS = [0, 15, 35, 60, 100]   # score minimum pour chaque niveau
 
@@ -31,9 +31,9 @@ _SCORE_THRESHOLDS = [0, 15, 35, 60, 100]   # score minimum pour chaque niveau
 # ci-dessus (spawn plus/moins fréquent, plus/moins de fruits, plus/moins
 # de bombes, vitesse plus/moins élevée), sans dupliquer toute la table.
 _DIFFICULTY_PRESETS = {
-    "easy":   {"spawn_mult": 1.4,  "wave_bonus": 0, "bomb_mult": 0.5, "speed_mult": 0.75, "label": "Facile"},
+    "easy":   {"spawn_mult": 0.75,  "wave_bonus": 0, "bomb_mult": 0.5, "speed_mult": 0.75, "label": "Facile"},
     "normal": {"spawn_mult": 1.0,  "wave_bonus": 0, "bomb_mult": 1.0, "speed_mult": 1.0,  "label": "Intermédiaire"},
-    "hard":   {"spawn_mult": 0.65, "wave_bonus": 1, "bomb_mult": 1.5, "speed_mult": 1.3,  "label": "Difficile"},
+    "hard":   {"spawn_mult": 0.80, "wave_bonus": 1, "bomb_mult": 1.3, "speed_mult": 1.05,  "label": "Difficile"},
 }
 _MIN_SPAWN_INTERVAL = 15
 _MAX_BOMB_RATIO = 0.4
