@@ -30,6 +30,11 @@ class BladeTracker:
         self.is_active: bool  = False
         self.speed: float     = 0.0
 
+        self.smooth_factor = 0.45
+        self.smoothed_pos = None
+
+        self.collision_segments_count = 3
+
     # ──────────────────────────────────────────────
     # Mise à jour
     # ──────────────────────────────────────────────
@@ -49,6 +54,20 @@ class BladeTracker:
             if self.points:
                 self.points.popleft()
             return
+
+        # Lissage léger de la position du doigt
+        if self.smoothed_pos is None:
+            self.smoothed_pos = pos
+        else:
+            sx, sy = self.smoothed_pos
+            px, py = pos
+
+            self.smoothed_pos = (
+                int(sx * self.smooth_factor + px * (1 - self.smooth_factor)),
+                int(sy * self.smooth_factor + py * (1 - self.smooth_factor))
+            )
+
+        pos = self.smoothed_pos
 
         # Calcul de la vitesse instantanée
         if self.points:
@@ -100,3 +119,16 @@ class BladeTracker:
 
     def __len__(self) -> int:
         return len(self.points)
+
+    def get_collision_segments(self):
+        pts = list(self.points)
+
+        if len(pts) < 2:
+            return []
+
+        pts = pts[-self.collision_segments_count:]
+
+        return [
+            (pts[i], pts[i + 1])
+            for i in range(len(pts) - 1)
+        ]
