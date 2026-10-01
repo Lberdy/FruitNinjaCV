@@ -95,7 +95,7 @@ def _try_new_api(max_hands, min_det, min_track):
     model_path = _ensure_model()
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=model_path),
-        running_mode=VisionTaskRunningMode.IMAGE,
+        running_mode=VisionTaskRunningMode.VIDEO,
         num_hands=max_hands,
         min_hand_detection_confidence=min_det,
         min_hand_presence_confidence=min_det,
@@ -134,8 +134,8 @@ class HandTracker:
     def __init__(
         self,
         max_num_hands: int = 1,
-        min_detection_confidence: float = 0.6,
-        min_tracking_confidence: float = 0.5,
+        min_detection_confidence: float = 0.5,
+        min_tracking_confidence: float = 0.4,
         slice_speed_threshold: float = 15.0,
         history_len: int = 5,
     ) -> None:
@@ -166,6 +166,7 @@ class HandTracker:
         self.current_pos = None
         self.speed: float = 0.0
         self.is_slicing: bool = False
+        self._timestamp_ms = 0
 
     # ──────────────────────────────────────────────
     # API principale
@@ -186,7 +187,8 @@ class HandTracker:
         import mediapipe as mp
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         mp_img    = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-        result    = self._detector.detect(mp_img)
+        self._timestamp_ms += 33
+        result = self._detector.detect_for_video(mp_img, self._timestamp_ms)    
         if not result.hand_landmarks:
             return None
         tip = result.hand_landmarks[0][INDEX_TIP]
