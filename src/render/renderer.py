@@ -33,6 +33,7 @@ class Renderer:
         self.screen = screen
         self.width  = width
         self.height = height
+        self.game_surface = pygame.Surface((800, 600))
 
         # ── Loading screen ─────────────────────────
         self.WIDTH = width
@@ -295,6 +296,27 @@ class Renderer:
 
                 if event.type == pygame.QUIT:
                     return False
+
+                elif event.type == pygame.VIDEORESIZE:
+                    self.screen = pygame.display.set_mode(
+                        (event.w, event.h),
+                        pygame.RESIZABLE
+                    )
+
+                    self.WIDTH = event.w
+                    self.HEIGHT = event.h
+
+                    loading_bg_path = _IMAGES / "loading_bg.jpg"
+
+                    if loading_bg_path.exists():
+                        loading_bg = pygame.image.load(
+                            str(loading_bg_path)
+                        ).convert()
+
+                        self.loading_background = pygame.transform.scale(
+                            loading_bg,
+                            (self.WIDTH, self.HEIGHT)
+                        )
 
                 if progress >= 100:
 
@@ -593,9 +615,10 @@ class Renderer:
     # ──────────────────────────────────────────────
 
     def draw(self, frame_bgr: np.ndarray,
-             game: GameManager,
-             blade: BladeTracker) -> None:
-        """Dessine une frame complète."""
+         game: GameManager,
+         blade: BladeTracker) -> None:
+
+        """Dessine le jeu en 800x600 puis l'adapte à la fenêtre."""
 
         if game.play_slice_sound:
             self.slice_sound.play()
@@ -609,12 +632,15 @@ class Renderer:
         if game.play_gameover_sound:
             self.gameover_sound.play()
 
+        # On dessine toujours le jeu sur une surface logique 800x600
+        self.screen = self.game_surface
+
         # 1. Fond
         self._draw_background(frame_bgr)
 
         # 2. Objets du jeu
         for obj in game.objects:
-            obj.draw(self.screen)
+            obj.draw(self.game_surface)
 
         # 3. Lame
         self._draw_blade(blade)
@@ -622,11 +648,25 @@ class Renderer:
         # 4. HUD
         self._draw_hud(game)
 
-        # 5. Effets flottants (+points, combo)
+        # 5. Effets
         self._draw_effects(game)
 
-        pygame.display.flip()
+        # Récupérer la vraie taille de la fenêtre
+        window_width, window_height = pygame.display.get_surface().get_size()
 
+        # Agrandir/réduire le jeu 800x600 pour remplir la fenêtre
+        scaled_game = pygame.transform.smoothscale(
+            self.game_surface,
+            (window_width, window_height)
+        )
+
+        # Afficher le résultat dans la vraie fenêtre
+        pygame.display.get_surface().blit(
+            scaled_game,
+            (0, 0)
+        )
+
+        pygame.display.flip()
     # ──────────────────────────────────────────────
     # Fond
     # ──────────────────────────────────────────────
