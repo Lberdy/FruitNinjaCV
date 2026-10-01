@@ -71,24 +71,26 @@ class CollisionManager:
             if obj.missed and not isinstance(obj, Bomb):
                 result.missed_fruits.append(obj)
 
-        # Pas de lame active -> pas de tranche
-        if self.blade_speed_required and not blade.is_active:
-            return result
+        segments = blade.get_collision_segments()
 
-        segment = blade.get_last_segment()
-        if segment is None:
+        if not segments:
             return result
-
-        p1, p2 = segment
 
         for obj in objects:
             if not obj.is_alive:
                 continue
-            if obj.is_hit_by_segment(p1, p2):
-                obj.slice()
-                if isinstance(obj, Bomb):
-                    result.exploded_bombs.append(obj)
-                else:
-                    result.sliced_fruits.append(obj)
+
+            # On teste tous les segments récents de la lame
+            for p1, p2 in segments:
+                if obj.is_hit_by_segment(p1, p2):
+                    obj.slice()
+
+                    if isinstance(obj, Bomb):
+                        result.exploded_bombs.append(obj)
+                    else:
+                        result.sliced_fruits.append(obj)
+
+                    # Un objet ne doit être touché qu'une seule fois
+                    break
 
         return result
