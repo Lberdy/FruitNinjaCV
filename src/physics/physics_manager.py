@@ -21,11 +21,11 @@ _FRUIT_TYPES = [Apple, Pineapple, Watermelon, Orange]
 _SPAWN_WEIGHTS = [0.30, 0.25, 0.20, 0.25]
 
 # Vitesse verticale initiale (vers le haut -> négatif)
-_VY_MIN = -18.0
-_VY_MAX = -12.0
+_VY_MIN = -25.0
+_VY_MAX = -21.0
 
 # Vitesse horizontale
-_VX_ABS_MAX = 4.0
+_VX_ABS_MAX = 5.5
 
 
 class PhysicsManager:
@@ -58,7 +58,7 @@ class PhysicsManager:
         x  = random.randint(80, self.screen_width - 80)
         y  = self.screen_height + 10   # sous l'écran
         vx = random.uniform(-_VX_ABS_MAX, _VX_ABS_MAX) * self.speed_multiplier
-        vy = random.uniform(_VY_MIN, _VY_MAX) * self.speed_multiplier
+        vy = random.uniform(_VY_MIN, _VY_MAX) 
 
         if random.random() < self.bomb_ratio:
             obj: Fruit = Bomb(x, y, vx, vy)
@@ -87,7 +87,7 @@ class PhysicsManager:
         """
         removed = []
         for obj in self.objects:
-            obj.update(self.screen_height)
+            obj.update(self.screen_width, self.screen_height)
 
         dead = [o for o in self.objects if o.is_dead]
         self.objects = [o for o in self.objects if not o.is_dead]
