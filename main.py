@@ -1,18 +1,23 @@
-import sys, io
+import sys
+import io
+
 if sys.platform == 'win32':
     try:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer,
+            encoding='utf-8',
+            errors='replace'
+        )
     except Exception:
         pass
 
 """
 FruitNinjaCV - main.py
+
 Point d'entrée principal du jeu.
-Coordonne la caméra, la CV et le moteur de jeu, ainsi que la navigation
-entre le menu (choix de difficulté), la partie et l'écran de Game Over.
+Coordonne la caméra, la CV et le moteur de jeu.
 """
 
-import sys
 import pygame
 
 from src.camera.camera_manager import CameraManager
@@ -23,106 +28,217 @@ from src.render.renderer import Renderer
 from src.ui.menu import Menu
 from src.ui.game_over import GameOverScreen
 
+
 # ──────────────────────────────────────────────
-# Constantes globales
+# Constantes
 # ──────────────────────────────────────────────
-WINDOW_WIDTH  = 800
+
+WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
-FPS           = 60
-WINDOW_TITLE  = "Fruit Ninja CV"
+FPS = 60
+WINDOW_TITLE = "Fruit Ninja CV"
 
 
 def main() -> None:
-    """Boucle principale du jeu."""
+
     pygame.init()
     pygame.mixer.init()
 
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    # Fenêtre redimensionnable
+    screen = pygame.display.set_mode(
+        (WINDOW_WIDTH, WINDOW_HEIGHT),
+        pygame.RESIZABLE
+    )
+
     pygame.display.set_caption(WINDOW_TITLE)
+
     clock = pygame.time.Clock()
 
-    # ── Initialisation des modules ──────────────
-    camera       = CameraManager(width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-    hand_tracker = HandTracker()
-    blade        = BladeTracker(max_points=20)
-    renderer     = Renderer(screen, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-    menu         = Menu(screen, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
+    # ── Initialisation ─────────────────────────
 
-    # Écran de chargement 
+    camera = CameraManager(
+        width=WINDOW_WIDTH,
+        height=WINDOW_HEIGHT
+    )
+
+    hand_tracker = HandTracker()
+
+    blade = BladeTracker(
+        max_points=20
+    )
+
+    renderer = Renderer(
+        screen,
+        width=WINDOW_WIDTH,
+        height=WINDOW_HEIGHT
+    )
+
+    menu = Menu(
+        screen,
+        width=WINDOW_WIDTH,
+        height=WINDOW_HEIGHT
+    )
+
+    # ── Loading ────────────────────────────────
+
     if not renderer.loading_screen():
         pygame.quit()
         sys.exit()
 
+    # ── Application ────────────────────────────
 
-    # Boucle d'application : MENU -> PLAYING -> GAME_OVER -> MENU 
     app_running = True
+
     while app_running:
 
-        # ── Menu : choix de la difficulté ───────
-        difficulty = menu.run()   # None si le joueur quitte
+        # Toujours récupérer la taille actuelle
+        current_width, current_height = screen.get_size()
+
+        # Mettre à jour le menu
+        menu.screen = screen
+        menu.width = current_width
+        menu.height = current_height
+
+        # ── Menu ───────────────────────────────
+
+        difficulty = menu.run()
+
         if difficulty is None:
             app_running = False
             break
 
-        game = GameManager(width=WINDOW_WIDTH, height=WINDOW_HEIGHT, difficulty=difficulty)
-        # Arreter la musique du menu
+        # Le gameplay reste LOGIQUEMENT en 800x600.
+        # Le Renderer s'occupe ensuite de l'agrandissement visuel.
+
+        game = GameManager(
+            width=WINDOW_WIDTH,
+            height=WINDOW_HEIGHT,
+            difficulty=difficulty
+        )
+
+        # Arrêter la musique du loading/menu
         pygame.mixer.music.stop()
+
         game.start()
         blade.clear()
 
-        # ── Boucle de partie ─────────────────────
+        # ── Partie ─────────────────────────────
+
         playing = True
+
         while playing:
 
-            # 1. Événements Pygame
+            # ── Événements ─────────────────────
+
             for event in pygame.event.get():
+
                 if event.type == pygame.QUIT:
+
                     playing = False
                     app_running = False
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+
+                elif event.type == pygame.VIDEORESIZE:
+
+                    # Nouvelle taille de la fenêtre
+                    screen = pygame.display.set_mode(
+                        (event.w, event.h),
+                        pygame.RESIZABLE
+                    )
+
+                    # Le Renderer utilise maintenant
+                    # cette nouvelle fenêtre.
+                    renderer.screen = screen
+
+                    # Le menu aussi
+                    menu.screen = screen
+                    menu.width = event.w
+                    menu.height = event.h
+
+                elif (
+                    event.type == pygame.KEYDOWN
+                    and event.key == pygame.K_ESCAPE
+                ):
+
                     playing = False
                     app_running = False
 
             if not playing:
                 break
 
-            # 2. Lire la frame webcam
-            frame_bgr = camera.read()                    # numpy BGR
+            # ── Webcam ─────────────────────────
+
+            frame_bgr = camera.read()
+
             if frame_bgr is None:
                 continue
 
-            # 3. Détecter la main -> position du bout de l'index
-            finger_pos = hand_tracker.get_index_tip(frame_bgr)  # (x, y) ou None
+            # ── Détection de la main ───────────
 
-            # 4. Mettre à jour la trajectoire de la lame
-            blade.update(finger_pos)
+            finger_pos = hand_tracker.get_index_tip(
+                frame_bgr
+            )
 
-            # 5. Logique de jeu (spawn, physique, collisions)
-            game.update(blade)
+            # ── Lame ──────────────────────────
 
-            # 6. Rendu complet
-            renderer.draw(frame_bgr, game, blade)
+            blade.update(
+                finger_pos
+            )
 
-            # 7. Game over ?
+            # ── Logique du jeu ─────────────────
+
+            game.update(
+                blade
+            )
+
+            # ── Rendu ─────────────────────────
+
+            renderer.draw(
+                frame_bgr,
+                game,
+                blade
+            )
+
+            # ── Game Over ──────────────────────
+
             if game.is_over():
-                go = GameOverScreen(screen, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-                action = go.run(game.score_manager.score)
+
+                current_width, current_height = screen.get_size()
+
+                go = GameOverScreen(
+                    screen,
+                    width=current_width,
+                    height=current_height
+                )
+
+                action = go.run(
+                    game.score_manager.score
+                )
+
                 if action == "restart":
+
                     game.restart()
                     blade.clear()
+
                 elif action == "menu":
+
+                    # Relancer la musique du menu
                     if not pygame.mixer.music.get_busy():
                         pygame.mixer.music.play(-1)
-                    playing = False       # retourne à la boucle de menu, même app_running
+
+                    playing = False
+
                 else:
+
                     playing = False
                     app_running = False
 
             clock.tick(FPS)
 
-    # ── Nettoyage ────────────────────────────────
+    # ── Nettoyage ──────────────────────────────
+
     camera.release()
     hand_tracker.close()
+
     pygame.quit()
     sys.exit()
 
