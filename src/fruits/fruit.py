@@ -273,7 +273,7 @@ def load_scaled_image(
 
 class Fruit(ABC):
 
-    GRAVITY = 0.4
+    GRAVITY = 0.64
     MAX_FALL_SPEED = 20.0
 
     # Ancien système de sprite sliced
@@ -453,12 +453,14 @@ class Fruit(ABC):
 
     def update(
         self,
+        screen_width: int,
         screen_height: int
     ) -> None:
 
         if self.state == FruitState.ALIVE:
 
             self._update_alive(
+                screen_width,
                 screen_height
             )
 
@@ -506,6 +508,7 @@ class Fruit(ABC):
 
     def _update_alive(
         self,
+        screen_width: int,
         screen_height: int
     ) -> None:
 
